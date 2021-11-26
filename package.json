@@ -1,0 +1,24 @@
+{
+  "name": "@logspot/web",
+  "version": "1.0.2",
+  "description": "Logspot Web SDK",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/logspot/logspot-web.git"
+  },
+  "scripts": {
+    "prepublish": "tsc"
+  },
+  "author": "Logspot",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^4.5.2"
+  },
+  "dependencies": {},
+  "files": [
+    "dist/index.js",
+    "dist/index.d.ts"
+  ]
+}
