@@ -40,7 +40,7 @@ const track = async (data: {
 
     if (res.status !== 200) {
       const body = await res.json();
-      console.error("Logspot - ", body);
+      console.debug("Logspot - ", body);
       return;
     }
 
