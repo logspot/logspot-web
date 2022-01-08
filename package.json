@@ -9,7 +9,7 @@
     "url": "https://github.com/logspot/logspot-web.git"
   },
   "scripts": {
-    "prepublish": "tsc"
+    "deploy": "tsc && yarn publish --access=public"
   },
   "author": "Logspot",
   "license": "MIT",
