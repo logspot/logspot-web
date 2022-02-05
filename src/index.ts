@@ -84,7 +84,7 @@ const track = async (data: {
       mode: "cors",
       body: JSON.stringify({
         name: data.event,
-        userId: data.userId ?? uid,
+        user_id: data.userId ?? uid,
         ...(data.metadata && { metadata: data.metadata }),
       }),
     });
