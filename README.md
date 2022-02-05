@@ -18,8 +18,11 @@ or
 ```js
 import Logspot from '@logspot/web';
 
-Logspot.init({ publicKey: 'YOUR_PUBLIC_KEY' });
+Logspot.init({ publicKey: 'YOUR_PUBLIC_KEY', cookiesDisabled: true });
 ```
+
+- `publicKey` - project public key
+- `cookiesDisabled` - use this property to disable anonymous user tracking
 
 ### Track
 

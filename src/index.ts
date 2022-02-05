@@ -1,9 +1,35 @@
+import { getCookie, eraseCookie, setCookie } from "./cookies";
+
+const LOGSPOT_COOKIE_ID = "lgspt_uid";
 const API_URL = "https://api.logspot.io";
 
-let sdkConfig: { publicKey: string };
+const getUid = () => {
+  return (
+    String.fromCharCode(Math.floor(Math.random() * 26) + 97) +
+    Math.random().toString(16).slice(2) +
+    Date.now().toString(16).slice(4)
+  );
+};
 
-const init = (config: { publicKey: string }) => {
+interface SdkConfig {
+  publicKey: string;
+  cookiesDisabled: boolean;
+}
+
+let sdkConfig: SdkConfig;
+
+const init = (config: SdkConfig) => {
   sdkConfig = config;
+
+  if (config.cookiesDisabled) {
+    eraseCookie(LOGSPOT_COOKIE_ID);
+  } else {
+    const uid = getCookie(LOGSPOT_COOKIE_ID);
+
+    if (!uid) {
+      setCookie(LOGSPOT_COOKIE_ID, getUid(), 5 * 12 * 30);
+    }
+  }
 };
 
 const track = async (data: {
@@ -23,6 +49,8 @@ const track = async (data: {
     return;
   }
 
+  const uid = getCookie(LOGSPOT_COOKIE_ID);
+
   try {
     const res = await fetch(`${API_URL}/track`, {
       method: "POST",
@@ -33,7 +61,7 @@ const track = async (data: {
       mode: "cors",
       body: JSON.stringify({
         name: data.event,
-        ...(data.userId && { userId: data.userId }),
+        userId: data.userId ?? uid,
         ...(data.metadata && { metadata: data.metadata }),
       }),
     });
