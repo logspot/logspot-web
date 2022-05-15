@@ -58,6 +58,8 @@ const init = (config: SdkConfig) => {
 const track = async (data: {
   event: string;
   userId?: string;
+  message?: string;
+  notify?: boolean;
   metadata?: Record<string, any>;
 }) => {
   if (!sdkConfig || !sdkConfig.publicKey) {
@@ -84,6 +86,8 @@ const track = async (data: {
       mode: "cors",
       body: JSON.stringify({
         name: data.event,
+        message: data.message,
+        notify: data.notify,
         user_id: data.userId ?? uid,
         ...(data.metadata && { metadata: data.metadata }),
       }),
