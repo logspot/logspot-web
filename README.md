@@ -29,6 +29,8 @@ Logspot.init({ publicKey: 'YOUR_PUBLIC_KEY', cookiesDisabled: true });
 ```js
 Logspot.track({ 
     event: 'UserSubscribed', 
+    notify: true,
+    message: 'john@doe.com has subscribed', 
     userId: 'john@doe.com', 
     metadata: { additionalData: '123' } 
 });
