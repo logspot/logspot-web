@@ -1,6 +1,6 @@
 {
   "name": "@logspot/web",
-  "version": "2.1.6",
+  "version": "2.1.7",
   "description": "Logspot Web SDK",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -15,10 +15,7 @@
   "author": "Logspot",
   "license": "MIT",
   "devDependencies": {
-    "ts-loader": "^9.3.0",
-    "typescript": "^4.5.2",
-    "webpack": "^5.73.0",
-    "webpack-cli": "^4.10.0"
+    "typescript": "^4.5.2"
   },
   "dependencies": {},
   "files": [
