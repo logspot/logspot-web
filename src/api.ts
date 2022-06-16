@@ -8,6 +8,11 @@ export const trackEvent = async (
     notify?: boolean | null;
     userId?: string | null;
     metadata?: any | null;
+    hostname?: string | null;
+    url?: string | null;
+    referrer?: string | null;
+    language?: string | null;
+    screen?: string | null;
   }
 ) => {
   if (!payload.event) {
@@ -29,6 +34,11 @@ export const trackEvent = async (
         notify: payload.notify,
         user_id: payload.userId,
         metadata: payload.metadata ?? {},
+        hostname: payload.hostname,
+        url: payload.url,
+        referrer: payload.referrer?.length ? payload.referrer : null,
+        language: payload.language,
+        screen: payload.screen,
       }),
     });
 

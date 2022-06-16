@@ -11,6 +11,14 @@ interface SdkConfig {
 let sdkConfig: SdkConfig;
 let disableTracking: boolean;
 
+let getPageViewPayload: () => {
+  hostname: string;
+  screen: string;
+  language: string;
+  url: string;
+  referrer: string;
+};
+
 const init = (config: SdkConfig) => {
   disableTracking = shouldDisableTracking();
 
@@ -29,6 +37,29 @@ const init = (config: SdkConfig) => {
       setCookie(LOGSPOT_COOKIE_ID, getUid(), 5 * 12 * 30);
     }
   }
+
+  getPageViewPayload = () => {
+    const {
+      screen: { width, height },
+      navigator: { language },
+      location: { hostname, pathname, search },
+      localStorage,
+      document,
+      history,
+    } = window;
+
+    const screen = `${width}x${height}`;
+    let currentUrl = `${pathname}${search}`;
+    let currentRef = document.referrer;
+    
+    return {
+      hostname,
+      screen,
+      language,
+      url: currentUrl,
+      referrer: currentRef,
+    };
+  };
 };
 
 const track = async (data: {
@@ -51,13 +82,31 @@ const track = async (data: {
 
   const uid = getCookie(LOGSPOT_COOKIE_ID);
 
+  const payload = getPageViewPayload();
+
   await trackEvent(sdkConfig.publicKey, {
     event: data.event,
     message: data.message,
     notify: data.notify,
     userId: data.userId ?? uid,
+    hostname: payload.hostname,
+    language: payload.language,
+    referrer: payload.referrer,
+    screen: payload.screen,
+    url: payload.url,
     metadata: data.metadata ?? {},
   });
 };
 
-export default { init, track };
+const pageview = async (data?: {
+  userId?: string;
+  metadata?: Record<string, any>;
+}) => {
+  await track({
+    event: "Pageview",
+    userId: data?.userId,
+    metadata: data?.metadata,
+  });
+};
+
+export default { init, track, pageview };
