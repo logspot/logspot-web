@@ -1,67 +1,63 @@
 import { trackEvent } from "./api";
-import { eraseCookie, getCookie, setCookie } from "./cookies";
+import { eraseCookie, getCookie, LOGSPOT_COOKIE_ID, setCookie } from "./cookie";
 import { shouldDisableTracking } from "./dnt";
-import { getUid } from "./uid";
+import { getUid } from "./user";
 
 interface SdkConfig {
   publicKey: string;
   cookiesDisabled: boolean;
 }
 
-export default (() => {
-  const LOGSPOT_COOKIE_ID = "lgspt_uid";
+let sdkConfig: SdkConfig;
+let disableTracking: boolean;
 
-  const disableTracking = shouldDisableTracking();
+const init = (config: SdkConfig) => {
+  disableTracking = shouldDisableTracking();
 
-  let sdkConfig: SdkConfig;
+  if (typeof window === "undefined") {
+    throw new Error("Logspot - script needs access to window object");
+  }
 
-  const init = (config: SdkConfig) => {
-    if (typeof window === "undefined") {
-      throw new Error("Logspot - script needs access to window object");
-    }
+  sdkConfig = config;
 
-    sdkConfig = config;
-
-    if (config.cookiesDisabled || disableTracking) {
-      eraseCookie(LOGSPOT_COOKIE_ID);
-    } else {
-      const uid = getCookie(LOGSPOT_COOKIE_ID);
-
-      if (!uid) {
-        setCookie(LOGSPOT_COOKIE_ID, getUid(), 5 * 12 * 30);
-      }
-    }
-  };
-
-  const track = async (data: {
-    event: string;
-    userId?: string;
-    message?: string;
-    notify?: boolean;
-    metadata?: Record<string, any>;
-  }) => {
-    if (disableTracking) {
-      return;
-    }
-
-    if (!sdkConfig || !sdkConfig.publicKey) {
-      console.error(
-        "Logspot - SDK not configured. You need to call: Logspot.init({publicKey: 'YOUR_PUBLIC_KEY'})"
-      );
-      return;
-    }
-
+  if (config.cookiesDisabled || disableTracking) {
+    eraseCookie(LOGSPOT_COOKIE_ID);
+  } else {
     const uid = getCookie(LOGSPOT_COOKIE_ID);
 
-    await trackEvent(sdkConfig.publicKey, {
-      event: data.event,
-      message: data.message,
-      notify: data.notify,
-      userId: data.userId ?? uid,
-      metadata: data.metadata ?? {},
-    });
+    if (!uid) {
+      setCookie(LOGSPOT_COOKIE_ID, getUid(), 5 * 12 * 30);
+    }
+  }
+};
 
-  };
+const track = async (data: {
+  event: string;
+  userId?: string;
+  message?: string;
+  notify?: boolean;
+  metadata?: Record<string, any>;
+}) => {
+  if (disableTracking) {
+    return;
+  }
 
-  return { init, track };
-})();
+  if (!sdkConfig || !sdkConfig.publicKey) {
+    console.error(
+      "Logspot - SDK not configured. You need to call: Logspot.init({publicKey: 'YOUR_PUBLIC_KEY'})"
+    );
+    return;
+  }
+
+  const uid = getCookie(LOGSPOT_COOKIE_ID);
+
+  await trackEvent(sdkConfig.publicKey, {
+    event: data.event,
+    message: data.message,
+    notify: data.notify,
+    userId: data.userId ?? uid,
+    metadata: data.metadata ?? {},
+  });
+};
+
+export default { init, track };

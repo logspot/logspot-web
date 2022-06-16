@@ -3,10 +3,11 @@ export const shouldDisableTracking = () => {
   const urlSearchParams = new URLSearchParams(window.location.search);
   const params = Object.fromEntries((urlSearchParams as any).entries());
 
+  const queryWithDNT = typeof params.dnt !== "undefined";
   const disableTracking =
-    !!params.dnt || localStorage.getItem(LOGSPOT_DNT) === "1";
+    queryWithDNT || localStorage.getItem(LOGSPOT_DNT) === "1";
 
-  if (!!params.dnt) {
+  if (queryWithDNT) {
     localStorage.setItem(LOGSPOT_DNT, "1");
   }
 

@@ -1,3 +1,5 @@
+export const LOGSPOT_COOKIE_ID = "lgspt_uid";
+
 export const setCookie = (
   name: string,
   value: string,
