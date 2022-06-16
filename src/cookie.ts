@@ -1,16 +1,10 @@
 export const LOGSPOT_COOKIE_ID = "lgspt_uid";
 
-export const setCookie = (
-  name: string,
-  value: string,
-  days: number,
-  domain?: string
-) => {
+export const setCookie = (name: string, value: string, days: number) => {
   let date = new Date();
   date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
-  document.cookie = `${name}=${
-    value || ""
-  };expires=${date.toUTCString()}${`;domain=${domain}`};path=/"`;
+  const expires = "; expires=" + date.toUTCString();
+  document.cookie = name + "=" + (value || "") + expires + "; path=/";
 };
 
 export const getCookie = (name: string): string | null => {

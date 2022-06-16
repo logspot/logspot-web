@@ -48,7 +48,6 @@ export const trackEvent = async (
       return;
     }
 
-    console.debug("Logspot - event tracked");
   } catch (err) {
     console.error("Logspot - could not track event");
   }
