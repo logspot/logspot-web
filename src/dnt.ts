@@ -1,8 +1,7 @@
 export const shouldDisableTracking = () => {
   const LOGSPOT_DNT = "lgspt_dnt";
-  const params: any = new Proxy(new URLSearchParams(window.location.search), {
-    get: (searchParams, prop: string) => searchParams.get(prop),
-  });
+  const urlSearchParams = new URLSearchParams(window.location.search);
+  const params = Object.fromEntries((urlSearchParams as any).entries());
 
   const disableTracking =
     !!params.dnt || localStorage.getItem(LOGSPOT_DNT) === "1";
