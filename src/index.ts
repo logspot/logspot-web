@@ -1,108 +1,67 @@
-const setCookie = (name: string, value: string, days: number) => {
-  let expires = "";
-  if (days) {
-    let date = new Date();
-    date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
-    expires = "; expires=" + date.toUTCString();
-  }
-  document.cookie = name + "=" + (value || "") + expires + "; path=/";
-};
-
-const getCookie = (name: string): string | null => {
-  const nameEQ = name + "=";
-  const ca = document.cookie.split(";");
-  for (var i = 0; i < ca.length; i++) {
-    let c = ca[i];
-    while (c.charAt(0) == " ") c = c.substring(1, c.length);
-    if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
-  }
-  return null;
-};
-
-const eraseCookie = (name: string) => {
-  document.cookie = name + "=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
-};
-
-const LOGSPOT_COOKIE_ID = "lgspt_uid";
-const API_URL = "https://api.logspot.io";
-
-const getUid = () => {
-  return (
-    String.fromCharCode(Math.floor(Math.random() * 26) + 97) +
-    Math.random().toString(16).slice(2) +
-    Date.now().toString(16).slice(4)
-  );
-};
+import { trackEvent } from "./api";
+import { eraseCookie, getCookie, setCookie } from "./cookies";
+import { shouldDisableTracking } from "./dnt";
+import { getUid } from "./uid";
 
 interface SdkConfig {
   publicKey: string;
   cookiesDisabled: boolean;
 }
 
-let sdkConfig: SdkConfig;
+export default (() => {
+  const LOGSPOT_COOKIE_ID = "lgspt_uid";
 
-const init = (config: SdkConfig) => {
-  sdkConfig = config;
+  const disableTracking = shouldDisableTracking();
 
-  if (config.cookiesDisabled) {
-    eraseCookie(LOGSPOT_COOKIE_ID);
-  } else {
-    const uid = getCookie(LOGSPOT_COOKIE_ID);
+  let sdkConfig: SdkConfig;
 
-    if (!uid) {
-      setCookie(LOGSPOT_COOKIE_ID, getUid(), 5 * 12 * 30);
+  const init = (config: SdkConfig) => {
+    if (typeof window === "undefined") {
+      throw new Error("Logspot - script needs access to window object");
     }
-  }
-};
 
-const track = async (data: {
-  event: string;
-  userId?: string;
-  message?: string;
-  notify?: boolean;
-  metadata?: Record<string, any>;
-}) => {
-  if (!sdkConfig || !sdkConfig.publicKey) {
-    console.error(
-      "Logspot - SDK not configured. You need to call: Logspot.init({publicKey: 'YOUR_PUBLIC_KEY'})"
-    );
-    return;
-  }
+    sdkConfig = config;
 
-  if (!data || !data.event) {
-    console.error("Logspot - event parameter is required");
-    return;
-  }
+    if (config.cookiesDisabled || disableTracking) {
+      eraseCookie(LOGSPOT_COOKIE_ID);
+    } else {
+      const uid = getCookie(LOGSPOT_COOKIE_ID);
 
-  const uid = getCookie(LOGSPOT_COOKIE_ID);
+      if (!uid) {
+        setCookie(LOGSPOT_COOKIE_ID, getUid(), 5 * 12 * 30);
+      }
+    }
+  };
 
-  try {
-    const res = await fetch(`${API_URL}/track`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-logspot-pk": sdkConfig.publicKey,
-      },
-      mode: "cors",
-      body: JSON.stringify({
-        name: data.event,
-        message: data.message,
-        notify: data.notify,
-        user_id: data.userId ?? uid,
-        ...(data.metadata && { metadata: data.metadata }),
-      }),
-    });
-
-    if (res.status !== 200) {
-      const body = await res.json();
-      console.debug("Logspot - ", body);
+  const track = async (data: {
+    event: string;
+    userId?: string;
+    message?: string;
+    notify?: boolean;
+    metadata?: Record<string, any>;
+  }) => {
+    if (disableTracking) {
       return;
     }
 
-    console.debug("Logspot - event tracked");
-  } catch (err) {
-    console.error("Logspot - could not track event");
-  }
-};
+    if (!sdkConfig || !sdkConfig.publicKey) {
+      console.error(
+        "Logspot - SDK not configured. You need to call: Logspot.init({publicKey: 'YOUR_PUBLIC_KEY'})"
+      );
+      return;
+    }
 
-export default { init, track };
+    const uid = getCookie(LOGSPOT_COOKIE_ID);
+
+    await trackEvent(sdkConfig.publicKey, {
+      event: data.event,
+      message: data.message,
+      notify: data.notify,
+      userId: data.userId ?? uid,
+      metadata: data.metadata ?? {},
+    });
+
+  };
+
+  return { init, track };
+})();
