@@ -60,44 +60,44 @@ const script = () => {
       return;
     }
 
-    if (config.enableAutoPageviews) {
-      const update = () => {
-        if (document.readyState === "complete") {
+    const update = () => {
+      if (document.readyState === "complete") {
+        if (sdkConfig.enableAutoPageviews) {
           pageview();
-          const bodyList = document.querySelector("body") as any;
-
-          const observer = new MutationObserver(function (mutations) {
-            mutations.forEach(function (mutation) {
-              if (currentUrl != document.location.href) {
-                const newUrl = document.location.href;
-                currentRef = currentUrl;
-
-                if (newUrl.substring(0, 4) === "http") {
-                  currentUrl = "/" + newUrl.split("/").splice(3).join("/");
-                } else {
-                  currentUrl = newUrl;
-                }
-
-                if (currentUrl !== currentRef) {
-                  pageview();
-                }
-              }
-            });
-          });
-
-          const config = {
-            childList: true,
-            subtree: true,
-          };
-
-          observer.observe(bodyList, config);
         }
-      };
+        const bodyList = document.querySelector("body") as any;
+
+        const observer = new MutationObserver(function (mutations) {
+          mutations.forEach(function (mutation) {
+            if (currentUrl != document.location.href) {
+              const newUrl = document.location.href;
+              currentRef = currentUrl;
+
+              if (newUrl.substring(0, 4) === "http") {
+                currentUrl = "/" + newUrl.split("/").splice(3).join("/");
+              } else {
+                currentUrl = newUrl;
+              }
+
+              if (currentUrl !== currentRef && sdkConfig.enableAutoPageviews) {
+                pageview();
+              }
+            }
+          });
+        });
+
+        const config = {
+          childList: true,
+          subtree: true,
+        };
+
+        observer.observe(bodyList, config);
+      }
 
       document.addEventListener("readystatechange", update, true);
 
       update();
-    }
+    };
 
     if (config.enableAutoClicks) {
       trackClicks();
