@@ -1,7 +1,9 @@
+import { SdkConfig } from "./sdk-config";
+
 const API_URL = "https://api.logspot.io";
 
 export const trackEvent = async (
-  publicKey: string,
+  config: SdkConfig,
   payload: {
     event: string;
     message?: string | null;
@@ -21,33 +23,35 @@ export const trackEvent = async (
   }
 
   try {
-    const res = await fetch(`${API_URL}/track`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-logspot-pk": publicKey,
-      },
-      mode: "cors",
-      body: JSON.stringify({
-        name: payload.event,
-        message: payload.message,
-        notify: payload.notify,
-        user_id: payload.userId,
-        metadata: payload.metadata ?? {},
-        hostname: payload.hostname,
-        url: payload.url,
-        referrer: payload.referrer?.length ? payload.referrer : null,
-        language: payload.language,
-        screen: payload.screen,
-      }),
-    });
+    const res = await fetch(
+      config.externalApiUrl ? config.externalApiUrl : `${API_URL}/track`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-logspot-pk": config.publicKey,
+        },
+        mode: "cors",
+        body: JSON.stringify({
+          name: payload.event,
+          message: payload.message,
+          notify: payload.notify,
+          user_id: payload.userId,
+          metadata: payload.metadata ?? {},
+          hostname: payload.hostname,
+          url: payload.url,
+          referrer: payload.referrer?.length ? payload.referrer : null,
+          language: payload.language,
+          screen: payload.screen,
+        }),
+      }
+    );
 
     if (res.status !== 200) {
       const body = await res.json();
       console.debug("Logspot - ", body);
       return;
     }
-
   } catch (err) {
     console.error("Logspot - could not track event");
   }

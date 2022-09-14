@@ -1,13 +1,8 @@
 import { trackEvent } from "./api";
 import { eraseCookie, getCookie, LOGSPOT_COOKIE_ID, setCookie } from "./cookie";
 import { shouldDisableTracking } from "./dnt";
+import { SdkConfig } from "./sdk-config";
 import { getUid } from "./user";
-
-interface SdkConfig {
-  publicKey: string;
-  cookiesDisabled: boolean;
-  autoTrack: boolean;
-}
 
 const script = () => {
   let sdkConfig: SdkConfig;
@@ -61,7 +56,11 @@ const script = () => {
       };
     };
 
-    if (config.autoTrack && !disableTracking) {
+    if (disableTracking) {
+      return;
+    }
+
+    if (config.enableAutoPageviews) {
       const update = () => {
         if (document.readyState === "complete") {
           pageview();
@@ -99,6 +98,10 @@ const script = () => {
 
       update();
     }
+
+    if (config.enableAutoClicks) {
+      trackClicks();
+    }
   };
 
   const track = async (data: {
@@ -123,7 +126,7 @@ const script = () => {
 
     const payload = getPageViewPayload();
 
-    await trackEvent(sdkConfig.publicKey, {
+    await trackEvent(sdkConfig, {
       event: data.event,
       message: data.message,
       notify: data.notify,
@@ -146,6 +149,33 @@ const script = () => {
       userId: data?.userId,
       metadata: data?.metadata,
     });
+  };
+
+  const trackClicks = () => {
+    const onClick = (event: MouseEvent): void => {
+      const target = event.target as any;
+
+      event.stopPropagation();
+
+      if (target?.innerText && target?.innerText > 500) {
+        return;
+      }
+
+      const text = target?.innerText?.slice(0, 500).trim();
+
+      track({
+        event: "Click",
+        metadata: {
+          id: target.id,
+          tag: target.tagName,
+          className: target.className,
+          text,
+          href: target.href,
+        },
+      });
+    };
+
+    document.addEventListener("click", onClick, false);
   };
 
   return { init, track, pageview };

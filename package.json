@@ -1,6 +1,6 @@
 {
   "name": "@logspot/web",
-  "version": "2.4.1",
+  "version": "3.0.0",
   "description": "Logspot Web SDK",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -9,7 +9,8 @@
     "url": "https://github.com/logspot/logspot-web.git"
   },
   "scripts": {
-    "deploy": "rimraf -rf dist && tsc && yarn publish --access=public"
+    "build": "rimraf -rf dist && tsc",
+    "deploy": "yarn build && yarn publish --access=public"
   },
   "author": "Logspot",
   "license": "MIT",
