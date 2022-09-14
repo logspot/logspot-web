@@ -115,7 +115,7 @@ const script = () => {
       return;
     }
 
-    if (!sdkConfig || !sdkConfig.publicKey) {
+    if (!sdkConfig || (!sdkConfig.externalApiUrl && !sdkConfig.publicKey)) {
       console.error(
         "Logspot - SDK not configured. You need to call: Logspot.init({publicKey: 'YOUR_PUBLIC_KEY'})"
       );
