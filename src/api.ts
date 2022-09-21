@@ -8,7 +8,7 @@ export const trackEvent = async (
     event: string;
     message?: string | null;
     notify?: boolean | null;
-    userId?: string | null;
+    userId: string;
     metadata?: any | null;
     hostname?: string | null;
     url?: string | null;

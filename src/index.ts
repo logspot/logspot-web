@@ -2,11 +2,18 @@ import { trackEvent } from "./api";
 import { eraseCookie, getCookie, LOGSPOT_COOKIE_ID, setCookie } from "./cookie";
 import { shouldDisableTracking } from "./dnt";
 import { SdkConfig } from "./sdk-config";
+import { Properties, SuperProperties } from "./super-properties";
 import { getUid } from "./user";
 
-const script = () => {
+const DEFAULT_CONFIG = {
+  cookiesDisabled: false,
+  enableAutoPageviews: true,
+  enableAutoClicks: false,
+};
+
+const Logspot = () => {
   let sdkConfig: SdkConfig;
-  let disableTracking: boolean;
+  let disableTracking: boolean = shouldDisableTracking();
 
   let getPageViewPayload: () => {
     hostname: string;
@@ -16,15 +23,24 @@ const script = () => {
 
   let currentUrl: string;
   let currentRef: string;
+  let userId: string;
+  let superProperties: SuperProperties;
 
-  const init = (config: SdkConfig) => {
+  const init = async (config: SdkConfig) => {
     if (typeof window === "undefined") {
       throw new Error("Logspot - script needs access to window object");
     }
 
-    disableTracking = shouldDisableTracking();
+    if (disableTracking) {
+      return;
+    }
 
-    sdkConfig = config;
+    sdkConfig = {
+      ...DEFAULT_CONFIG,
+      ...config,
+    };
+
+    superProperties = new SuperProperties(sdkConfig);
 
     const {
       screen: { width, height },
@@ -40,11 +56,13 @@ const script = () => {
 
     if (config.cookiesDisabled || disableTracking) {
       eraseCookie(LOGSPOT_COOKIE_ID);
+      userId = getUid();
     } else {
-      const uid = getCookie(LOGSPOT_COOKIE_ID);
+      const cookie = getCookie(LOGSPOT_COOKIE_ID);
+      userId = cookie ?? getUid();
 
-      if (!uid) {
-        setCookie(LOGSPOT_COOKIE_ID, getUid(), 5 * 12 * 30);
+      if (!cookie) {
+        setCookie(LOGSPOT_COOKIE_ID, userId, 5 * 12 * 30);
       }
     }
 
@@ -56,8 +74,8 @@ const script = () => {
       };
     };
 
-    if (disableTracking) {
-      return;
+    if (sdkConfig.onLoad) {
+      await sdkConfig.onLoad();
     }
 
     const update = () => {
@@ -93,14 +111,13 @@ const script = () => {
 
         observer.observe(bodyList, config);
       }
-
-      document.addEventListener("readystatechange", update, true);
-
-      update();
     };
 
+    document.addEventListener("readystatechange", update, true);
+    update();
+
     if (config.enableAutoClicks) {
-      trackClicks();
+      captureClicks();
     }
   };
 
@@ -111,7 +128,7 @@ const script = () => {
     notify?: boolean;
     metadata?: Record<string, any>;
   }) => {
-    if (disableTracking) {
+    if (!sdkConfig || disableTracking) {
       return;
     }
 
@@ -122,21 +139,23 @@ const script = () => {
       return;
     }
 
-    const uid = getCookie(LOGSPOT_COOKIE_ID);
-
     const payload = getPageViewPayload();
+    const { userId: propsUserId, ...props } = superProperties.getProperties();
 
     await trackEvent(sdkConfig, {
       event: data.event,
       message: data.message,
       notify: data.notify,
-      userId: data.userId ?? uid,
+      userId: data.userId ?? (propsUserId ? `${propsUserId}` : null) ?? userId,
       hostname: payload.hostname,
       language: payload.language,
       referrer: currentRef,
       screen: payload.screen,
       url: currentUrl,
-      metadata: data.metadata ?? {},
+      metadata: {
+        ...props,
+        ...(data.metadata ?? {}),
+      },
     });
   };
 
@@ -144,6 +163,10 @@ const script = () => {
     userId?: string;
     metadata?: Record<string, any>;
   }) => {
+    if (!sdkConfig || disableTracking) {
+      return;
+    }
+
     await track({
       event: "Pageview",
       userId: data?.userId,
@@ -151,7 +174,7 @@ const script = () => {
     });
   };
 
-  const trackClicks = () => {
+  const captureClicks = () => {
     const onClick = (event: MouseEvent): void => {
       const target = event.target as any;
 
@@ -178,7 +201,44 @@ const script = () => {
     document.addEventListener("click", onClick, false);
   };
 
-  return { init, track, pageview };
+  const register = (properties: Properties) => {
+    if (!sdkConfig || disableTracking) {
+      return true;
+    }
+    return superProperties.register(properties);
+  };
+
+  const getProperties = () => {
+    if (!sdkConfig || disableTracking) {
+      return {};
+    }
+    return superProperties.getProperties();
+  };
+
+  const unregister = (property: string) => {
+    if (!sdkConfig || disableTracking) {
+      return;
+    }
+    superProperties.unregister(property);
+  };
+
+  const reset = () => {
+    if (!sdkConfig || disableTracking) {
+      return;
+    }
+
+    eraseCookie(LOGSPOT_COOKIE_ID);
+    superProperties.clear();
+
+    userId = getUid();
+
+    if (!sdkConfig.cookiesDisabled && !disableTracking) {
+      setCookie(LOGSPOT_COOKIE_ID, userId, 5 * 12 * 30);
+    }
+  };
+
+  return { init, track, pageview, register, unregister, reset, getProperties };
 };
 
-export default script();
+export const logspot = Logspot();
+export default logspot;

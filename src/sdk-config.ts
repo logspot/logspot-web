@@ -4,4 +4,5 @@ export interface SdkConfig {
   enableAutoPageviews?: boolean;
   enableAutoClicks?: boolean;
   externalApiUrl?: string;
+  onLoad: () => void | (() => Promise<void>);
 }
