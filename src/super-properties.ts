@@ -3,28 +3,24 @@ import { SdkConfig } from "./sdk-config";
 
 export type Property = string | number | boolean;
 export type Properties = Record<string, Property>;
-
-export const b64EncodeUnicode = (str: string) => {
-  return btoa(encodeURIComponent(str));
-};
-
-export const UnicodeDecodeB64 = (str: string) => {
-  return decodeURIComponent(atob(str));
-};
-
-export const LOGSPOT_PROPS = "lgspt_p";
-
 export class SuperProperties {
+  LOGSPOT_PROPS = "lgspt_p";
+  private expiryDays: number = 30;
   private properties: Record<string, Property>;
 
   constructor(private readonly sdkConfig: SdkConfig) {
-    const cookie = getCookie(LOGSPOT_PROPS);
-    const decoded = cookie ? JSON.parse(UnicodeDecodeB64(cookie)) : {};
+    const cookie = getCookie(this.LOGSPOT_PROPS);
+    const decoded = cookie ? JSON.parse(this.UnicodeDecodeB64(cookie)) : {};
     this.properties = decoded;
   }
 
-  register(newProps: Properties) {
+  register(newProps: Properties, days?: number) {
     this.properties = { ...this.properties, ...newProps };
+
+    if (typeof days !== "undefined") {
+      this.expiryDays = days;
+    }
+
     this._save();
   }
 
@@ -35,7 +31,7 @@ export class SuperProperties {
 
   clear() {
     this.properties = {};
-    eraseCookie(LOGSPOT_PROPS);
+    eraseCookie(this.LOGSPOT_PROPS);
   }
 
   getProperties() {
@@ -47,9 +43,17 @@ export class SuperProperties {
       return;
     }
     setCookie(
-      LOGSPOT_PROPS,
-      b64EncodeUnicode(JSON.stringify(this.properties)),
-      30
+      this.LOGSPOT_PROPS,
+      this.b64EncodeUnicode(JSON.stringify(this.properties)),
+      this.expiryDays
     );
+  }
+
+  private b64EncodeUnicode(str: string) {
+    return btoa(encodeURIComponent(str));
+  }
+
+  private UnicodeDecodeB64(str: string) {
+    return decodeURIComponent(atob(str));
   }
 }

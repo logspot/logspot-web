@@ -1,9 +1,11 @@
 import { trackEvent } from "./api";
+import { Campaign, CAMPAIGN_KEYWORDS } from "./campaign";
 import { eraseCookie, getCookie, LOGSPOT_COOKIE_ID, setCookie } from "./cookie";
 import { shouldDisableTracking } from "./dnt";
 import { SdkConfig } from "./sdk-config";
 import { Properties, SuperProperties } from "./super-properties";
 import { getUid } from "./user";
+import { removeQueryParamsFromUrl } from "./utils";
 
 const DEFAULT_CONFIG = {
   cookiesDisabled: false,
@@ -25,6 +27,7 @@ const Logspot = () => {
   let currentRef: string;
   let userId: string;
   let superProperties: SuperProperties;
+  let campaign: Campaign;
 
   const init = async (config: SdkConfig) => {
     if (typeof window === "undefined") {
@@ -43,6 +46,7 @@ const Logspot = () => {
     };
 
     superProperties = new SuperProperties(sdkConfig);
+    campaign = new Campaign(sdkConfig);
 
     const {
       screen: { width, height },
@@ -143,6 +147,9 @@ const Logspot = () => {
 
     const payload = getPageViewPayload();
     const { userId: propsUserId, ...props } = superProperties.getProperties();
+    const campaignParams = campaign.getCampagingParams();
+
+    const cleanedUrl = removeQueryParamsFromUrl(currentUrl, CAMPAIGN_KEYWORDS);
 
     await trackEvent(sdkConfig, {
       event: data.event,
@@ -153,8 +160,9 @@ const Logspot = () => {
       language: payload.language,
       referrer: currentRef,
       screen: payload.screen,
-      url: currentUrl,
+      url: cleanedUrl,
       metadata: {
+        ...campaignParams,
         ...props,
         ...(data.metadata ?? {}),
       },

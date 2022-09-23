@@ -4,5 +4,6 @@ export interface SdkConfig {
   enableAutoPageviews?: boolean;
   enableAutoClicks?: boolean;
   externalApiUrl?: string;
+  stickyCampaigns?: boolean;
   onLoad?: () => void | (() => Promise<void>);
 }
