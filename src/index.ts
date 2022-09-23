@@ -13,7 +13,7 @@ const DEFAULT_CONFIG = {
 
 const Logspot = () => {
   let sdkConfig: SdkConfig;
-  let disableTracking: boolean = shouldDisableTracking();
+  let disableTracking: boolean;
 
   let getPageViewPayload: () => {
     hostname: string;
@@ -30,6 +30,8 @@ const Logspot = () => {
     if (typeof window === "undefined") {
       throw new Error("Logspot - script needs access to window object");
     }
+
+    disableTracking = shouldDisableTracking();
 
     if (disableTracking) {
       return;
