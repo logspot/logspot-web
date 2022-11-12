@@ -68,7 +68,7 @@ const Logspot = () => {
       userId = cookie ?? getUid();
 
       if (!cookie) {
-        setCookie(LOGSPOT_COOKIE_ID, userId, 5 * 12 * 30);
+        setCookie(LOGSPOT_COOKIE_ID, userId, 5 * 12 * 30, sdkConfig.cookieDomain);
       }
     }
 
@@ -243,7 +243,7 @@ const Logspot = () => {
     userId = getUid();
 
     if (!sdkConfig.cookiesDisabled && !disableTracking) {
-      setCookie(LOGSPOT_COOKIE_ID, userId, 5 * 12 * 30);
+      setCookie(LOGSPOT_COOKIE_ID, userId, 5 * 12 * 30, sdkConfig.cookieDomain);
     }
   };
 

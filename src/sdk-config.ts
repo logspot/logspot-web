@@ -5,5 +5,6 @@ export interface SdkConfig {
   enableAutoClicks?: boolean;
   externalApiUrl?: string;
   stickyCampaigns?: boolean;
+  cookieDomain?: string;
   onLoad?: () => void | (() => Promise<void>);
 }

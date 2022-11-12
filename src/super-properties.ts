@@ -45,7 +45,8 @@ export class SuperProperties {
     setCookie(
       this.LOGSPOT_PROPS,
       this.b64EncodeUnicode(JSON.stringify(this.properties)),
-      this.expiryDays
+      this.expiryDays,
+      this.sdkConfig.cookieDomain
     );
   }
 
