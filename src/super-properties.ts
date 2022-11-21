@@ -1,4 +1,4 @@
-import { eraseCookie, getCookie, setCookie } from "./cookie";
+import { eraseCookie, getCookie, ONE_DAY_IN_SECONDS, setCookie } from "./cookie";
 import { SdkConfig } from "./sdk-config";
 
 export type Property = string | number | boolean;
@@ -42,12 +42,12 @@ export class SuperProperties {
     if (this.sdkConfig.cookiesDisabled) {
       return;
     }
-    setCookie(
-      this.LOGSPOT_PROPS,
-      this.b64EncodeUnicode(JSON.stringify(this.properties)),
-      this.expiryDays,
-      this.sdkConfig.cookieDomain
-    );
+    setCookie({
+      name: this.LOGSPOT_PROPS,
+      value: this.b64EncodeUnicode(JSON.stringify(this.properties)),
+      expiresInSeconds: this.expiryDays * ONE_DAY_IN_SECONDS,
+      domain: this.sdkConfig.cookieDomain,
+    });
   }
 
   private b64EncodeUnicode(str: string) {

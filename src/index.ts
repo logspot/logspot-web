@@ -1,6 +1,12 @@
 import { trackEvent } from "./api";
 import { Campaign, CAMPAIGN_KEYWORDS } from "./campaign";
-import { eraseCookie, getCookie, LOGSPOT_COOKIE_ID, setCookie } from "./cookie";
+import {
+  eraseCookie,
+  getCookie,
+  LOGSPOT_COOKIE_ID,
+  ONE_YEAR_IN_SECONDS,
+  setCookie,
+} from "./cookie";
 import { shouldDisableTracking } from "./dnt";
 import { SdkConfig } from "./sdk-config";
 import { Properties, SuperProperties } from "./super-properties";
@@ -68,7 +74,13 @@ const Logspot = () => {
       userId = cookie ?? getUid();
 
       if (!cookie) {
-        setCookie(LOGSPOT_COOKIE_ID, userId, 5 * 12 * 30, sdkConfig.cookieDomain);
+        setCookie({
+          name: LOGSPOT_COOKIE_ID,
+          value: userId,
+          expiresInSeconds:
+            sdkConfig.cookieExpirationInSeconds ?? 2 * ONE_YEAR_IN_SECONDS,
+          domain: sdkConfig.cookieDomain,
+        });
       }
     }
 
@@ -243,7 +255,12 @@ const Logspot = () => {
     userId = getUid();
 
     if (!sdkConfig.cookiesDisabled && !disableTracking) {
-      setCookie(LOGSPOT_COOKIE_ID, userId, 5 * 12 * 30, sdkConfig.cookieDomain);
+      setCookie({
+        name: LOGSPOT_COOKIE_ID,
+        value: userId,
+        expiresInSeconds: sdkConfig.cookieExpirationInSeconds ?? 2 * ONE_YEAR_IN_SECONDS,
+        domain: sdkConfig.cookieDomain,
+      });
     }
   };
 

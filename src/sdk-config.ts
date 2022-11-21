@@ -6,5 +6,6 @@ export interface SdkConfig {
   externalApiUrl?: string;
   stickyCampaigns?: boolean;
   cookieDomain?: string;
+  cookieExpirationInSeconds?: number;
   onLoad?: () => void | (() => Promise<void>);
 }
