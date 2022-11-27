@@ -37,7 +37,7 @@ export const trackEvent = async (
     };
 
     if (config.eventMapper) {
-      payloadToSend = config.eventMapper(payloadToSend);
+      payloadToSend = await config.eventMapper(payloadToSend);
     }
 
     await fetch(
