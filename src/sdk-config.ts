@@ -1,5 +1,6 @@
 export type EventPayload = {
   name: string;
+  channel?: string | null;
   message?: string | null;
   notify?: boolean | null;
   user_id?: string;
@@ -13,6 +14,7 @@ export type EventPayload = {
 
 export interface SdkConfig {
   publicKey: string;
+  pageviewsChannel?: string;
   cookiesDisabled?: boolean;
   enableAutoPageviews?: boolean;
   enableAutoClicks?: boolean;

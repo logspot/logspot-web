@@ -141,6 +141,7 @@ const Logspot = () => {
 
   const track = async (data: {
     event: string;
+    channel?: string | null;
     userId?: string;
     message?: string;
     notify?: boolean;
@@ -165,6 +166,7 @@ const Logspot = () => {
 
     await trackEvent(sdkConfig, {
       event: data.event,
+      channel: data.channel,
       message: data.message,
       notify: data.notify,
       userId: data.userId ?? (propsUserId ? `${propsUserId}` : null) ?? userId,
@@ -191,6 +193,7 @@ const Logspot = () => {
 
     await track({
       event: "Pageview",
+      channel: sdkConfig.pageviewsChannel ?? null,
       userId: data?.userId,
       metadata: data?.metadata,
     });
@@ -210,6 +213,7 @@ const Logspot = () => {
 
       track({
         event: "Click",
+        channel: sdkConfig.pageviewsChannel ?? null,
         metadata: {
           id: target.id,
           tag: target.tagName,

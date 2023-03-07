@@ -6,6 +6,7 @@ export const trackEvent = async (
   config: SdkConfig,
   payload: {
     event: string;
+    channel?: string | null;
     message?: string | null;
     notify?: boolean | null;
     userId: string;
@@ -25,6 +26,7 @@ export const trackEvent = async (
   try {
     let payloadToSend: EventPayload = {
       name: payload.event,
+      channel: payload.channel,
       message: payload.message,
       notify: payload.notify,
       user_id: payload.userId,
