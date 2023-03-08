@@ -1,5 +1,6 @@
 import { trackEvent } from "./api";
 import { Campaign, CAMPAIGN_KEYWORDS } from "./campaign";
+import { listenToClassClicks } from "./class-listener";
 import {
   eraseCookie,
   getCookie,
@@ -134,6 +135,10 @@ const Logspot = () => {
     document.addEventListener("readystatechange", update, true);
     update();
 
+    listenToClassClicks(({ name }) =>
+      track({ event: name, channel: sdkConfig.pageviewsChannel })
+    );
+
     if (config.enableAutoClicks) {
       captureClicks();
     }
@@ -262,7 +267,8 @@ const Logspot = () => {
       setCookie({
         name: LOGSPOT_COOKIE_ID,
         value: userId,
-        expiresInSeconds: sdkConfig.cookieExpirationInSeconds ?? 2 * ONE_YEAR_IN_SECONDS,
+        expiresInSeconds:
+          sdkConfig.cookieExpirationInSeconds ?? 2 * ONE_YEAR_IN_SECONDS,
         domain: sdkConfig.cookieDomain,
       });
     }
