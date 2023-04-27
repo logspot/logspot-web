@@ -8,7 +8,7 @@ import {
   ONE_YEAR_IN_SECONDS,
   setCookie,
 } from "./cookie";
-import { shouldDisableTracking } from "./dnt";
+import { hasBrowserDNT, hasExplicitDNT as hasExplicitDNT } from "./dnt";
 import { SdkConfig } from "./sdk-config";
 import { Properties, SuperProperties } from "./super-properties";
 import { getUid } from "./user";
@@ -41,7 +41,7 @@ const Logspot = () => {
       throw new Error("Logspot - script needs access to window object");
     }
 
-    disableTracking = shouldDisableTracking();
+    disableTracking = hasExplicitDNT() || (!!config.enableBrowserDNT && hasBrowserDNT());
 
     if (disableTracking) {
       return;

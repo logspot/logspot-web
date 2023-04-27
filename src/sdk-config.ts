@@ -22,6 +22,7 @@ export interface SdkConfig {
   stickyCampaigns?: boolean;
   cookieDomain?: string;
   cookieExpirationInSeconds?: number;
+  enableBrowserDNT?: boolean;
   onLoad?: () => void | (() => Promise<void>);
   eventMapper?: (payload: EventPayload) => EventPayload | (() => Promise<EventPayload>);
 }
