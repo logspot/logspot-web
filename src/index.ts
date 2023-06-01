@@ -14,10 +14,11 @@ import { Properties, SuperProperties } from "./super-properties";
 import { getUid } from "./user";
 import { removeQueryParamsFromUrl } from "./utils";
 
-const DEFAULT_CONFIG = {
+const DEFAULT_CONFIG: Omit<SdkConfig, 'publicKey'> = {
   cookiesDisabled: false,
   enableAutoPageviews: true,
   enableAutoClicks: false,
+  stickyCampaigns: false,
 };
 
 const Logspot = () => {
@@ -80,7 +81,7 @@ const Logspot = () => {
           value: userId,
           expiresInSeconds:
             sdkConfig.cookieExpirationInSeconds ?? 2 * ONE_YEAR_IN_SECONDS,
-          domain: sdkConfig.cookieDomain,
+          domain: sdkConfig.cookieDomain ?? null,
         });
       }
     }
@@ -269,7 +270,7 @@ const Logspot = () => {
         value: userId,
         expiresInSeconds:
           sdkConfig.cookieExpirationInSeconds ?? 2 * ONE_YEAR_IN_SECONDS,
-        domain: sdkConfig.cookieDomain,
+        domain: sdkConfig.cookieDomain ?? null,
       });
     }
   };

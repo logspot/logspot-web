@@ -23,6 +23,8 @@ Logspot.init({ publicKey: "YOUR_PUBLIC_KEY", cookiesDisabled: true });
 - `publicKey` - project public key
 - `cookiesDisabled` - use this property to disable anonymous user tracking
 - `enableAutoPageviews` - enable auto tracking of pageviews (default: true)
+- `stickyCampaigns` - enable storing UTM parameters in cookies (default: true)
+- `stickyCampaignsExpirationInSeconds` - timeout for sticky campaigns (default: 7 days)
 - `enableAutoClicks` - enable auto capture of user clicks (default: false)
 - `externalApiUrl` - provide here API proxy url
 - `onLoad` - use this function to perform actions when Logspot is loaded. E.g. register super properties before initial pageview

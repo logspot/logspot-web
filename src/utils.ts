@@ -27,3 +27,11 @@ export const removeQueryParamsFromUrl = (url: string, params: string[]) => {
     return url;
   }
 };
+
+export const b64EncodeUnicode = (str: string) => {
+  return btoa(encodeURIComponent(str));
+};
+
+export const UnicodeDecodeB64 = (str: string) => {
+  return decodeURIComponent(atob(str));
+};

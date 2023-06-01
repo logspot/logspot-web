@@ -20,6 +20,7 @@ export interface SdkConfig {
   enableAutoClicks?: boolean;
   externalApiUrl?: string;
   stickyCampaigns?: boolean;
+  stickyCampaignsExpirationInSeconds?: number;
   cookieDomain?: string;
   cookieExpirationInSeconds?: number;
   enableBrowserDNT?: boolean;

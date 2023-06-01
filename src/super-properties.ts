@@ -46,7 +46,7 @@ export class SuperProperties {
       name: this.LOGSPOT_PROPS,
       value: this.b64EncodeUnicode(JSON.stringify(this.properties)),
       expiresInSeconds: this.expiryDays * ONE_DAY_IN_SECONDS,
-      domain: this.sdkConfig.cookieDomain,
+      domain: this.sdkConfig.cookieDomain ?? null,
     });
   }
 

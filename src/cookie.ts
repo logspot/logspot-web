@@ -12,7 +12,7 @@ export const setCookie = ({
   name: string;
   value: string;
   expiresInSeconds: number;
-  domain?: string;
+  domain: string | null;
 }) => {
   let date = new Date();
   date.setTime(date.getTime() + expiresInSeconds * 1000);
