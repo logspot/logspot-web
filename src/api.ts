@@ -43,7 +43,7 @@ export const trackEvent = async (
     }
 
     await fetch(
-      config.externalApiUrl ? config.externalApiUrl : `${API_URL}/track`,
+      config.externalApiUrl ? config.externalApiUrl : `${API_URL}/i`,
       {
         method: "POST",
         headers: {
