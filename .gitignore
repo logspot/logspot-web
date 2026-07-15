@@ -1,2 +1,9 @@
 node_modules
 dist
+
+# Local VS Code settings
+settings.json.local
+package-lock.json
+
+# Local AI tooling
+.claude/

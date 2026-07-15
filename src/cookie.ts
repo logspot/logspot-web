@@ -33,6 +33,9 @@ export const getCookie = (name: string): string | null => {
   return null;
 };
 
-export const eraseCookie = (name: string) => {
-  document.cookie = name + "=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+export const eraseCookie = (name: string, domain?: string | null) => {
+  // A domain-scoped cookie can only be deleted with the same Domain attribute.
+  const domainProperty = domain ? `; Domain=${domain}` : "";
+  document.cookie =
+    name + `=; Path=/${domainProperty}; Expires=Thu, 01 Jan 1970 00:00:01 GMT;`;
 };

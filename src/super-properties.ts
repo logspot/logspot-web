@@ -9,9 +9,13 @@ export class SuperProperties {
   private properties: Record<string, Property>;
 
   constructor(private readonly sdkConfig: SdkConfig) {
-    const cookie = getCookie(this.LOGSPOT_PROPS);
-    const decoded = cookie ? JSON.parse(this.UnicodeDecodeB64(cookie)) : {};
-    this.properties = decoded;
+    // A corrupt cookie throwing here would take down init() for its lifetime.
+    try {
+      const cookie = getCookie(this.LOGSPOT_PROPS);
+      this.properties = cookie ? JSON.parse(this.UnicodeDecodeB64(cookie)) : {};
+    } catch {
+      this.properties = {};
+    }
   }
 
   register(newProps: Properties, days?: number) {
@@ -31,7 +35,7 @@ export class SuperProperties {
 
   clear() {
     this.properties = {};
-    eraseCookie(this.LOGSPOT_PROPS);
+    eraseCookie(this.LOGSPOT_PROPS, this.sdkConfig.cookieDomain ?? null);
   }
 
   getProperties() {

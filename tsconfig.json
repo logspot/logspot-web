@@ -1,13 +1,14 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "es2017",
     "module": "commonjs",
-    "lib": ["es2019", "es2017", "es7", "es6", "dom", "DOM.Iterable"],
+    "lib": ["es2019", "dom", "DOM.Iterable"],
     "declaration": true,
+    "rootDir": "src",
     "outDir": "dist",
     "strict": true,
     "esModuleInterop": true
   },
-  "include": ["src/*.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "src/**/*.test.ts", "vitest.config.ts"]
 }

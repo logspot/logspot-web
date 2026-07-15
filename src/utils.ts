@@ -1,28 +1,28 @@
 export const removeQueryParamsFromUrl = (url: string, params: string[]) => {
   try {
-    const [base, queryString] = url.split("?");
+    // Split the hash off FIRST: it may follow the query, and splitting on `?`
+    // alone would fold `#frag` into the last param value (or drop it).
+    const hashIndex = url.indexOf("#");
+    const hash = hashIndex >= 0 ? url.slice(hashIndex) : "";
+    const withoutHash = hashIndex >= 0 ? url.slice(0, hashIndex) : url;
 
+    const [base, queryString] = withoutHash.split("?");
     if (!queryString) {
-      base;
+      return `${base}${hash}`;
     }
 
-    const urlSearchParams = new URLSearchParams(queryString);
-    const dirtyParams = urlSearchParams.entries();
-
-    const cleaned = Array.from(dirtyParams).filter(
-      ([param]) => !params.includes(param)
-    );
-    const reduced = cleaned.reduce((acc, [param, value]) => {
-      return { ...acc, [param]: value };
-    }, {});
-
+    const cleaned = Array.from(
+      new URLSearchParams(queryString).entries()
+    ).filter(([param]) => !params.includes(param));
     if (!cleaned.length) {
-      return base;
+      return `${base}${hash}`;
     }
 
-    const queryParams = new URLSearchParams(reduced);
+    // append (not an object) preserves repeated params and their order.
+    const queryParams = new URLSearchParams();
+    for (const [param, value] of cleaned) queryParams.append(param, value);
 
-    return `${base}?${queryParams}`;
+    return `${base}?${queryParams}${hash}`;
   } catch (err) {
     return url;
   }
