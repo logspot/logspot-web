@@ -5,6 +5,7 @@ import {
 } from "./ac-overrides";
 import {
   ConsentResult,
+  groupUser,
   identifyUser,
   IdentifyOptions,
   IdentifyResult,
@@ -73,6 +74,9 @@ type QueuedEvent = {
   message?: string;
   notify?: boolean;
   metadata?: Record<string, any>;
+  // Optional group/account association (Segment `$groups` style).
+  groupId?: string;
+  groupType?: string;
   // Revenue: monetary amount in MAJOR units + ISO-4217 currency. Set by
   // `revenue()`; absent on ordinary events.
   value?: number;
@@ -489,6 +493,11 @@ const Logspot = () => {
     metadata?: Record<string, any>;
     value?: number;
     currency?: string;
+    /** Associate this event with a group/account (Segment `$groups` style).
+     *  With groupType "company" (the default when groupId is set) the platform
+     *  resolves and stamps the company on the event. */
+    groupId?: string;
+    groupType?: string;
   }) => {
     if (!sdkConfig || disableTracking) {
       return;
@@ -600,6 +609,8 @@ const Logspot = () => {
         notify: data.notify,
         userId: resolvedUserId,
         anonymousId: data.anonymousId ?? anonymousId,
+        groupId: data.groupId,
+        groupType: data.groupType,
         hostname: payload.hostname,
         language: payload.language,
         referrer: data.referrer ?? currentRef,
@@ -771,6 +782,42 @@ const Logspot = () => {
     return result;
   };
 
+  /**
+   * Associate the current visitor with a group/account (Segment `group()`), e.g.
+   * a company. Binds to the identified `user_id` when known, otherwise to the
+   * managed `anonymousId` (the platform promotes anon memberships to the identity
+   * on the next identify). Not gated on consent: a customer-directed linkage call
+   * (legitimate interest); the server gates egress by purpose.
+   */
+  const group = async (
+    groupId: string,
+    traits?: Record<string, any>,
+    opts?: IdentifyOptions & { type?: string }
+  ): Promise<IdentifyResult> => {
+    if (!sdkConfig) {
+      console.warn("Logspot - group() called before init()");
+      return { ok: false, reason: "not_initialized" };
+    }
+    if (disableTracking) {
+      return { ok: false, reason: "tracking_disabled" };
+    }
+
+    const normalizedGroupId = `${groupId ?? ""}`.trim();
+    if (!normalizedGroupId) {
+      console.error("Logspot - group requires a groupId");
+      return { ok: false, reason: "missing_group_id" };
+    }
+
+    return groupUser(sdkConfig, {
+      anonymousId,
+      userId: identifiedUserId,
+      groupId: normalizedGroupId,
+      type: opts?.type,
+      traits,
+      options: opts,
+    });
+  };
+
   /** Apply the url-privacy toggle to first-touch urls before they egress. */
   const sanitizeFirstTouch = (
     firstTouch: Record<string, string>
@@ -917,6 +964,7 @@ const Logspot = () => {
     unregister,
     reset,
     identify,
+    group,
     setConsent,
     getConsent,
     applyConsentSnapshot,

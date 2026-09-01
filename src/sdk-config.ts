@@ -113,6 +113,8 @@ export interface SdkConfig {
   identifyApiUrl?: string;
   /** Override for the `POST /consent` endpoint (pattern of `identifyApiUrl`). */
   consentApiUrl?: string;
+  /** Override for the `POST /group` endpoint (pattern of `identifyApiUrl`). */
+  groupApiUrl?: string;
   /** Gating behavior for consent. Default `notRequired` (no behavior change). */
   consentBehavior?: ConsentBehavior;
   /**

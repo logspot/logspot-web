@@ -447,3 +447,100 @@ describe("@logspot/web - identify adoption semantics", () => {
     );
   });
 });
+
+
+describe("@logspot/web - group()", () => {
+  let fetchMock: ReturnType<typeof setupFetchMock>;
+
+  beforeEach(async () => {
+    resetCookies();
+    window.localStorage.clear();
+    __resetInMemoryAnonymousIdForTests();
+    fetchMock = setupFetchMock();
+    await init();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it("group() POSTs to /group with the managed anonymous_id and default type company", async () => {
+    const aid = logspot.getAnonymousId();
+
+    const result = await logspot.group("acme.com", { plan: "enterprise" });
+    expect(result.ok).toBe(true);
+
+    const groupCall = fetchMock.mock.calls.find(([url]) =>
+      String(url).endsWith("/group")
+    );
+    expect(groupCall).toBeDefined();
+
+    const [url, opts] = groupCall!;
+    expect(url).toBe("https://api.example.com/group");
+    expect((opts as RequestInit).method).toBe("POST");
+    expect((opts as any).headers["x-logspot-pk"]).toBe(PUBLIC_KEY);
+
+    const body = JSON.parse((opts as RequestInit).body as string);
+    expect(body.group_id).toBe("acme.com");
+    expect(body.type).toBe("company");
+    expect(body.anonymous_id).toBe(aid);
+    expect(body.traits).toEqual({ plan: "enterprise" });
+    expect(typeof body.timestamp).toBe("string");
+    expect(body.user_id).toBeUndefined();
+  });
+
+  it("group() binds to the identified user_id once identified, and honors an explicit type", async () => {
+    await logspot.identify("user_42");
+    await logspot.group("acme.com", undefined, { type: "workspace" });
+
+    const groupCall = fetchMock.mock.calls.find(([url]) =>
+      String(url).endsWith("/group")
+    );
+    const body = JSON.parse((groupCall![1] as RequestInit).body as string);
+    expect(body.user_id).toBe("user_42");
+    expect(body.type).toBe("workspace");
+  });
+
+  it("group() forwards identity_verification when a token is supplied", async () => {
+    await logspot.group("acme.com", undefined, {
+      identityVerification: { token: "jwt-token" },
+    });
+
+    const groupCall = fetchMock.mock.calls.find(([url]) =>
+      String(url).endsWith("/group")
+    );
+    const body = JSON.parse((groupCall![1] as RequestInit).body as string);
+    expect(body.identity_verification).toEqual({ token: "jwt-token" });
+  });
+
+  it("track() forwards group_id and defaults group_type to company", async () => {
+    await logspot.track({ event: "Signup", groupId: "acme.com" });
+    const body = lastFetchBody(fetchMock);
+    expect(body.name).toBe("Signup");
+    expect(body.group_id).toBe("acme.com");
+    expect(body.group_type).toBe("company");
+  });
+
+  it("track() honors an explicit group_type and omits group when absent", async () => {
+    await logspot.track({ event: "Seat Added", groupId: "acme.com", groupType: "workspace" });
+    let body = lastFetchBody(fetchMock);
+    expect(body.group_type).toBe("workspace");
+
+    await logspot.track({ event: "Plain" });
+    body = lastFetchBody(fetchMock);
+    expect(body.group_id).toBeUndefined();
+    expect(body.group_type).toBeUndefined();
+  });
+
+  it("group() rejects an empty groupId without a network call", async () => {
+    fetchMock.mockClear();
+    const result = await logspot.group("   ");
+    expect(result.ok).toBe(false);
+    expect(result.reason).toBe("missing_group_id");
+    const groupCall = fetchMock.mock.calls.find(([url]) =>
+      String(url).endsWith("/group")
+    );
+    expect(groupCall).toBeUndefined();
+  });
+});

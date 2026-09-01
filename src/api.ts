@@ -42,6 +42,11 @@ const consentUrlFromConfig = (config: SdkConfig): string | null => {
   return deriveEndpoint(config, "consent");
 };
 
+const groupUrlFromConfig = (config: SdkConfig): string | null => {
+  if (config.groupApiUrl) return config.groupApiUrl;
+  return deriveEndpoint(config, "group");
+};
+
 /**
  * Apply consent stamps to an event payload. Called *after* the user's
  * `eventMapper` so the stamps are authoritative and never clobbered. When no
@@ -83,6 +88,8 @@ export const trackEvent = async (
     screen?: string | null;
     value?: number | null;
     currency?: string | null;
+    groupId?: string | null;
+    groupType?: string | null;
   },
   consentSnapshot?: ConsentSnapshot | null,
   // Optional observed snippet-override report. Rides this track request only
@@ -114,6 +121,10 @@ export const trackEvent = async (
       // identical wire shape.
       ...(payload.value != null ? { value: payload.value } : {}),
       ...(payload.currency != null ? { currency: payload.currency } : {}),
+      ...(payload.groupId ? { group_id: payload.groupId } : {}),
+      ...(payload.groupId
+        ? { group_type: payload.groupType || "company" }
+        : {}),
     };
 
     if (config.eventMapper) {
@@ -276,6 +287,84 @@ export const identifyUser = async (
     return { ok: false, status: response.status, reason };
   } catch (err) {
     console.error("Logspot - could not identify user");
+    return { ok: false, reason: "network_error" };
+  }
+};
+
+/**
+ * Associate the current user/anonymous visitor with a group (Segment `group()`).
+ * Sent with the `x-logspot-pk` header like the other public-API calls. The
+ * platform requires a `user_id` or `anonymous_id`; the SDK always supplies its
+ * managed `anonymous_id`, and `user_id` when the visitor is identified.
+ */
+export const groupUser = async (
+  config: SdkConfig,
+  payload: {
+    anonymousId: string | null;
+    userId?: string | null;
+    groupId: string;
+    type?: string;
+    traits?: Record<string, any>;
+    options?: IdentifyOptions;
+  }
+): Promise<IdentifyResult> => {
+  if (!payload.groupId) {
+    console.error("Logspot - group requires a groupId");
+    return { ok: false, reason: "missing_group_id" };
+  }
+  if (!payload.userId && !payload.anonymousId) {
+    console.error("Logspot - group requires a userId or anonymousId");
+    return { ok: false, reason: "missing_subject" };
+  }
+
+  const body: Record<string, any> = {
+    group_id: payload.groupId,
+    type: payload.type || "company",
+    anonymous_id: payload.anonymousId,
+    timestamp: new Date().toISOString(),
+  };
+  if (payload.userId) body.user_id = payload.userId;
+  if (payload.traits) body.traits = payload.traits;
+
+  if (payload.options?.identityVerification?.token) {
+    body.identity_verification = {
+      token: payload.options.identityVerification.token,
+    };
+  }
+
+  const endpoint = groupUrlFromConfig(config);
+  if (!endpoint) {
+    return { ok: false, reason: "no_endpoint" };
+  }
+
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-logspot-pk": config.publicKey,
+      },
+      mode: "cors",
+      keepalive: true,
+      body: JSON.stringify(body),
+    });
+
+    if (response.ok) {
+      return { ok: true, status: response.status };
+    }
+
+    let reason: string | undefined;
+    try {
+      const errorBody = await response.json();
+      reason =
+        typeof errorBody?.message === "string" ? errorBody.message : undefined;
+    } catch {
+      // non-JSON error body; leave reason undefined
+    }
+    console.error("Logspot - group failed", response.status, reason);
+    return { ok: false, status: response.status, reason };
+  } catch (err) {
+    console.error("Logspot - could not associate group");
     return { ok: false, reason: "network_error" };
   }
 };
