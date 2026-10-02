@@ -280,6 +280,23 @@ describe("@logspot/web - identify edge cases", () => {
     expect(body.anonymous_id).toBe(logspot.getAnonymousId());
   });
 
+  it("revenue() without a currency still sends, and warns that reports leave it out", async () => {
+    await init();
+    fetchMock.mockClear();
+    const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await logspot.revenue(25);
+    expect(lastFetchBody(fetchMock).value).toBe(25);
+    expect(consoleWarn).toHaveBeenCalledWith(
+      expect.stringContaining("payment sent without a currency")
+    );
+
+    consoleWarn.mockClear();
+    await logspot.revenue(25, { currency: "USD" });
+    await logspot.revenue(0);
+    expect(consoleWarn).not.toHaveBeenCalled();
+  });
+
   it("revenue() honors an event-name override", async () => {
     await init();
     fetchMock.mockClear();

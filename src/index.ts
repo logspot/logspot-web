@@ -510,6 +510,12 @@ const Logspot = () => {
       return;
     }
 
+    if (data.value != null && data.value !== 0 && !data.currency) {
+      console.warn(
+        "Logspot - payment sent without a currency. Revenue reports leave it out unless the project counts payments without a currency. Pass currency, e.g. { currency: 'USD' }."
+      );
+    }
+
     const analytics = consentStore?.get()?.categories.analytics;
 
     // Express: send ONLY on an explicit analytics grant; an unknown/partial
