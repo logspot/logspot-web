@@ -4,11 +4,15 @@ Logspot SDK for browser applications built with React, Next.js, Angular, etc.
 
 ## Installation
 
-`npm install @logspot/web`
-
-or
-
-`yarn add @logspot/web`
+```sh
+npm install @logspot/web
+# or
+pnpm add @logspot/web
+# or
+yarn add @logspot/web
+# or
+bun add @logspot/web
+```
 
 ## Usage
 
@@ -19,6 +23,9 @@ import Logspot from "@logspot/web";
 
 Logspot.init({ publicKey: "YOUR_PUBLIC_KEY", cookiesDisabled: true });
 ```
+
+The named export is the same instance: `import { logspot } from "@logspot/web"`.
+CommonJS works too: `const { logspot } = require("@logspot/web")`.
 
 - `publicKey` - project public key
 - `cookiesDisabled` - use this property to disable cookie persistence (anonymous id falls back to localStorage / in-memory)
@@ -305,6 +312,19 @@ flag:
   `DEFAULT_QUERY_PARAM_ALLOWLIST`).
 - CDN equivalents: `data-strip-query-params`, `data-query-param-allowlist`.
 - This is defense-in-depth; the server strips authoritatively regardless.
+
+## Migration notes (5.4.0)
+
+- The package now ships an ES module build next to the CommonJS one, with an
+  `exports` map. `import Logspot from "@logspot/web"` resolves to the real
+  default export under strict ES module interop, such as Vite 8 in a
+  `"type": "module"` project or Node ES modules. On 5.3.x and earlier those
+  setups fail with `Logspot.track is not a function`; upgrade, or use the named
+  `logspot` import.
+- `require("@logspot/web")` returns the same shape as before (`default`,
+  `logspot`, and the named exports).
+- Only the package root is exported. Undocumented deep imports such as
+  `@logspot/web/dist/consent` no longer resolve; import from `@logspot/web`.
 
 ## Migration notes (5.2.0)
 

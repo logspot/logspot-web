@@ -1,0 +1,3 @@
+# Same supply-chain guard as logspot-platform: never install a version
+# published in the last 7 days.
+minimumReleaseAge: 10080
