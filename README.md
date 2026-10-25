@@ -36,6 +36,9 @@ CommonJS works too: `const { logspot } = require("@logspot/web")`.
 - `enableAutoClicks` - enable auto capture of user clicks (default: false)
 - `externalApiUrl` - provide here API proxy url for the track endpoint (e.g. `https://api.example.com/i`)
 - `identifyApiUrl` - optional override for the identify endpoint. If omitted and `externalApiUrl` ends in `/i` or `/track`, the SDK derives `/identify` from the same origin; otherwise defaults to `https://api.logspot.io/identify`
+- `tagPaymentLinks` - add the anonymous id as `client_reference_id` to Stripe Payment Links (`buy.stripe.com`) when they are clicked, so payments are attributed without building the URL yourself. An existing `client_reference_id` is never overwritten, and nothing is tagged while consent withholds sending (default: true)
+- `engagement` - engaged-time tracking: `"leave"` sends a `Page Leave` event when a page is hidden or left, `"heartbeat"` also sends a `Page Heartbeat` each visible minute (capped at 30 per page). Both carry `engaged_seconds`, count as events, and make session duration reflect when the visitor actually left. Overrides the project's dashboard setting, which defaults to off
+- `trackAutomatedBrowsers` - track browsers driven by WebDriver (`navigator.webdriver`, e.g. Playwright or Selenium). Off by default so test runs and scrapers don't count as visitors (default: false)
 - `onLoad` - use this function to perform actions when Logspot is loaded. E.g. register super properties before initial pageview
 
 ### Track
@@ -272,7 +275,7 @@ Cookie domain is configurable via `cookieDomain`.
 | `lgspt_consent` | cookie (localStorage/in-memory fallback) | 1 year | current consent snapshot (categories, privacy signals, source) stamped on every event | first consent snapshot (CMP adapter, `setConsent()`, or Google Consent Mode read) |
 | `lgspt_cfg_<publicKey>` | localStorage | 24h freshness window | cached per-project remote config (autocapture settings) delivered on track responses | first successful track response |
 | `lgspt_acov_<publicKey>` | localStorage | persistent | fingerprint of the last reported snippet-override set (dashboard "overridden by snippet" flag) | when the snippet overrides dashboard autocapture settings |
-| `lgspt_dnt` | localStorage | persistent | explicit opt-out marker; while present, no events are sent | visiting any page with `?dnt` in the query string |
+| `lgspt_dnt` | localStorage | persistent | explicit opt-out marker; while present, no events are sent | visiting any page with `?dnt` in the query string; `?dnt=false` (or `?dnt=0`) removes it |
 
 ### Disabling persistence
 
@@ -280,7 +283,8 @@ Cookie domain is configurable via `cookieDomain`.
   id falls back to localStorage, then to in-memory if localStorage is also
   unavailable. Other cookies (`lgspt_p`, `lgspt_c`) are simply not written.
 - `?dnt` in the URL or `enableBrowserDNT: true` (with browser DNT on) — the SDK
-  no-ops on every track/identify call for this visitor.
+  no-ops on every track/identify call for this visitor. Visit with `?dnt=false`
+  to opt the browser back in. Use `?dnt` to exclude your own visits.
 
 ### Consent
 

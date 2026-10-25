@@ -3,6 +3,12 @@ export const hasExplicitDNT = () => {
   const urlSearchParams = new URLSearchParams(window.location.search);
   const params = Object.fromEntries((urlSearchParams as any).entries());
 
+  // `?dnt=false` / `?dnt=0` lifts a prior opt-out; any other `?dnt` sets it.
+  if (params.dnt === "false" || params.dnt === "0") {
+    localStorage.removeItem(LOGSPOT_DNT);
+    return false;
+  }
+
   const queryWithDNT = typeof params.dnt !== "undefined";
 
   const disableTracking =
@@ -22,3 +28,7 @@ export const hasBrowserDNT = () => {
     (window as any).doNotTrack === "1"
   );
 };
+
+// Set by WebDriver-driven browsers (Selenium, Playwright, Puppeteer), which can
+// present an ordinary browser user agent the server-side bot filter accepts.
+export const isAutomatedBrowser = () => navigator.webdriver === true;

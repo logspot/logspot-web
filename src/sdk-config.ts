@@ -144,6 +144,26 @@ export interface SdkConfig {
   cookieDomain?: string;
   cookieExpirationInSeconds?: number;
   enableBrowserDNT?: boolean;
+  /**
+   * Add the anonymous id as `client_reference_id` to Stripe Payment Link
+   * (`buy.stripe.com`) hrefs when they are pressed, so the payment is
+   * attributed without hand-built URLs. An existing `client_reference_id` is
+   * never overwritten, and nothing is tagged while consent withholds sending.
+   * Default `true`.
+   */
+  tagPaymentLinks?: boolean;
+  /**
+   * Engaged-time tracking: `"leave"` sends a "Page Leave" event when a page is
+   * hidden or left; `"heartbeat"` also sends a "Page Heartbeat" each visible
+   * minute. Both carry `engaged_seconds` and count as events. Overrides the
+   * dashboard setting; default is the dashboard's, which defaults to `"off"`.
+   */
+  engagement?: "off" | "leave" | "heartbeat";
+  /**
+   * Track browsers driven by WebDriver (`navigator.webdriver`), e.g. to test
+   * the integration end to end with Playwright or Selenium. Default `false`.
+   */
+  trackAutomatedBrowsers?: boolean;
   onLoad?: () => void | Promise<void>;
   eventMapper?: (payload: EventPayload) => EventPayload | Promise<EventPayload>;
 }

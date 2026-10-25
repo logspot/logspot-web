@@ -45,6 +45,8 @@ export type RemoteConfig = {
   /** Schema version of the config document. */
   v?: number;
   autocapture?: RemoteAutocaptureConfig;
+  /** Engaged-time mode set in the dashboard ("off" | "leave" | "heartbeat"). */
+  engagement?: string;
 };
 
 /** Cache envelope persisted to localStorage. */

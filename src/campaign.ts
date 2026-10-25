@@ -14,6 +14,9 @@ export const CAMPAIGN_KEYWORDS = [
   "utm_term",
 ];
 
+// `ref` is not stored (the server reads it from the page url), but it still marks a new tagged link.
+const LINK_TAGS = [...CAMPAIGN_KEYWORDS, "ref"];
+
 const LOGSPOT_CAMPAIGN_COOKIE_ID = "lgspt_c";
 // Separate, durable first-touch cookie. The `lgspt_c` cookie above tracks the
 // CURRENT (last) touch and is rewritten on each sticky visit; `lgspt_ft` is
@@ -29,8 +32,10 @@ export class Campaign {
   private campaignParams: Record<string, string>;
 
   constructor(private readonly sdkConfig: SdkConfig) {
-    const cookieParams = this._getCampaignCookie();
-    const params = { ...cookieParams, ...this._getParams() };
+    // A new tagged link replaces the remembered campaign; merging would mix two campaigns.
+    const params = this._hasLinkTag()
+      ? this._getParams()
+      : this._getCampaignCookie();
     if (sdkConfig.stickyCampaigns) {
       this._setCampaignCookie(params);
     }
@@ -46,8 +51,8 @@ export class Campaign {
 
   getCampaignParams() {
     const params = this._getParams();
-    if (this.sdkConfig.stickyCampaigns) {
-      return { ...this.campaignParams, ...params };
+    if (this.sdkConfig.stickyCampaigns && !this._hasLinkTag()) {
+      return this.campaignParams;
     }
     return params;
   }
@@ -80,6 +85,11 @@ export class Campaign {
         this.sdkConfig.stickyCampaignsExpirationInSeconds ?? DEFAULT_EXPIRATION,
       domain: this.sdkConfig.cookieDomain ?? null,
     });
+  }
+
+  private _hasLinkTag(): boolean {
+    const query = new URLSearchParams(window.location.search);
+    return LINK_TAGS.some((key) => Boolean(query.get(key)));
   }
 
   private _getParams(): Record<string, string> {

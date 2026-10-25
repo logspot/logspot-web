@@ -29,7 +29,17 @@ import {
   setupAutocapture,
 } from "./autocapture";
 import { ONE_YEAR_IN_SECONDS } from "./cookie";
-import { hasBrowserDNT, hasExplicitDNT as hasExplicitDNT } from "./dnt";
+import {
+  hasBrowserDNT,
+  hasExplicitDNT as hasExplicitDNT,
+  isAutomatedBrowser,
+} from "./dnt";
+import {
+  EngagementTracker,
+  isEngagementMode,
+  setupEngagement,
+} from "./engagement";
+import { listenForPaymentLinks } from "./payment-links";
 import { detectPrivacySignals, subscribeGpp } from "./privacy-signals";
 import { readRemoteConfig } from "./remote-config";
 import { SdkConfig } from "./sdk-config";
@@ -56,6 +66,8 @@ const DEFAULT_CONFIG: Omit<SdkConfig, "publicKey"> = {
   consentBehavior: "notRequired",
   stripQueryParams: false,
   legacySpaDetection: false,
+  tagPaymentLinks: true,
+  trackAutomatedBrowsers: false,
 };
 
 /** Public argument shape for `setConsent()` — all fields optional (partial). */
@@ -139,6 +151,10 @@ const Logspot = () => {
   // Teardown for SPA route-change detection (History-API patches +
   // popstate/hashchange, or the legacy MutationObserver).
   let teardownSpaPageviews: (() => void) | null = null;
+  let teardownPaymentLinks: (() => void) | null = null;
+  let engagementTracker: EngagementTracker | null = null;
+  // Mode the tracker was set up with; re-applied when remote config changes.
+  let appliedEngagementMode: string | undefined;
   // Serialized snapshot of the currently-applied effective autocapture config,
   // so re-applying (after a fresh server config arrives) is a no-op when the
   // resolved config is unchanged. `undefined` = never applied yet.
@@ -163,6 +179,14 @@ const Logspot = () => {
 
   /** Whether the SDK sends until analytics is explicitly denied. */
   const isImpliedMode = () => sdkConfig?.consentBehavior === "implied";
+
+  /** Whether an event captured right now would be sent (not queued/dropped). */
+  const canSendNow = () => {
+    const analytics = consentStore?.get()?.categories.analytics;
+    if (isExpressMode()) return analytics === true;
+    if (isImpliedMode()) return analytics !== false;
+    return true;
+  };
 
   const consentPostKey = (snapshot: ConsentSnapshot | null): string | null =>
     snapshot
@@ -222,7 +246,9 @@ const Logspot = () => {
     }
 
     disableTracking =
-      hasExplicitDNT() || (!!config.enableBrowserDNT && hasBrowserDNT());
+      hasExplicitDNT() ||
+      (!!config.enableBrowserDNT && hasBrowserDNT()) ||
+      (!config.trackAutomatedBrowsers && isAutomatedBrowser());
 
     if (disableTracking) {
       return;
@@ -323,6 +349,8 @@ const Logspot = () => {
       if (nextUrl === currentUrl) {
         return;
       }
+      // Before currentUrl advances: the leave report belongs to the old page.
+      engagementTracker?.pageChanged();
       currentRef = currentUrl;
       currentUrl = nextUrl;
       if (sdkConfig.enableAutoPageviews) {
@@ -430,6 +458,14 @@ const Logspot = () => {
       track({ event: name, channel: sdkConfig.pageviewsChannel ?? null })
     );
 
+    teardownPaymentLinks?.();
+    teardownPaymentLinks = sdkConfig.tagPaymentLinks
+      ? listenForPaymentLinks({
+          getAnonymousId: () => anonymousId,
+          shouldTag: () => !disableTracking && canSendNow(),
+        })
+      : null;
+
     // Delegated autocapture. The effective config is merged
     // per-key as `snippet ?? server ?? default`: the snippet (`data-autocapture*`
     // / init option) wins for any key it sets, else the server config cached on
@@ -437,6 +473,39 @@ const Logspot = () => {
     // the server enables autocapture this resolves to null and nothing is
     // attached (fail-safe OFF).
     applyAutocapture();
+    applyEngagement();
+  };
+
+  /**
+   * Resolve the engagement mode (snippet ?? dashboard ?? "off") and (re)start
+   * the tracker when it changed. Called on init and after each track response,
+   * like autocapture, so a dashboard change applies without a reload.
+   */
+  const applyEngagement = () => {
+    if (!sdkConfig || disableTracking) {
+      return;
+    }
+    const remote = readRemoteConfig(sdkConfig.publicKey)?.engagement;
+    const mode = sdkConfig.engagement ?? (isEngagementMode(remote) ? remote : "off");
+    if (mode === appliedEngagementMode) {
+      return;
+    }
+    appliedEngagementMode = mode;
+
+    engagementTracker?.teardown();
+    engagementTracker =
+      mode === "off"
+        ? null
+        : setupEngagement({
+            mode,
+            send: (event, metadata) => {
+              void track({
+                event,
+                channel: sdkConfig.pageviewsChannel ?? null,
+                metadata,
+              });
+            },
+          });
   };
 
   /**
@@ -639,6 +708,7 @@ const Logspot = () => {
     // effect without a page reload. No-ops when the effective config is
     // unchanged.
     applyAutocapture();
+    applyEngagement();
   };
 
   /**

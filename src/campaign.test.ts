@@ -179,3 +179,43 @@ describe("Campaign first-touch (durable, set-once)", () => {
     });
   });
 });
+
+describe("Sticky campaign on a new tagged link", () => {
+  const stored = { utm_source: "x", utm_medium: "social", utm_campaign: "launch" };
+
+  beforeEach(() => {
+    vi.mocked(setCookie).mockClear();
+    vi.mocked(getCookie).mockImplementation((name: string) =>
+      name === "lgspt_c" ? b64EncodeUnicode(JSON.stringify(stored)) : null
+    );
+  });
+
+  afterEach(() => {
+    vi.mocked(getCookie).mockImplementation(() => null);
+    window.history.replaceState({}, "", "/");
+  });
+
+  const landOn = (path: string) => {
+    window.history.replaceState({}, "", path);
+    return new Campaign(baseConfig({ stickyCampaigns: true }));
+  };
+
+  it("drops the remembered campaign when the visitor arrives on a ?ref= link", () => {
+    const campaign = landOn("/?ref=newsletter-42");
+
+    expect(campaign.getCampaignParams()).toEqual({});
+    expect(setCookieCallFor("lgspt_c")?.value).toBe(b64EncodeUnicode("{}"));
+  });
+
+  it("replaces, not merges, the remembered campaign on a new UTM link", () => {
+    const campaign = landOn("/?utm_source=newsletter");
+
+    expect(campaign.getCampaignParams()).toEqual({ utm_source: "newsletter" });
+  });
+
+  it("keeps the remembered campaign on an untagged page", () => {
+    const campaign = landOn("/pricing");
+
+    expect(campaign.getCampaignParams()).toEqual(stored);
+  });
+});
